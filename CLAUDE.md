@@ -51,6 +51,20 @@ CSV→Array: `SLACK_DM_ALLOW_FROM` (user IDs/handles, always strings)
 
 Docs: https://docs.openclaw.ai/channels/slack
 
+### Hooks env vars (3 total)
+
+Gate: `HOOKS_ENABLED=true` (required to activate).
+
+Strings: `HOOKS_TOKEN`, `HOOKS_PATH`
+
+Merge behavior: same as Telegram/Discord/Slack (merge, custom JSON keys preserved).
+
+`entrypoint.sh` reads the resolved `hooks.path` from `openclaw.json` after `configure.js` runs and generates an nginx `location` block that **bypasses HTTP basic auth** for that path. Openclaw validates hook requests via its own token auth (`Authorization: Bearer <hooks.token>`).
+
+Complex keys (`presets`, `mappings`, `transformsDir`) are JSON-only — not exposed as env vars.
+
+Docs: https://docs.openclaw.ai/automation/webhook
+
 ### Groups/Guilds — JSON config only (all channels)
 
 `channels.<name>.groups` (or `guilds` for Discord) is **never** exposed as an env var, for any channel. Group/guild allowlists with per-group mention gating are too complex for flat env vars. When adding a new channel, keep `groups`/`guilds` in `my-openclaw.json` only.

@@ -62,6 +62,18 @@ echo "[entrypoint] running openclaw doctor --fix..."
 cd /opt/openclaw/app
 openclaw doctor --fix 2>&1 || true
 
+# ── Read hooks path from generated config (if hooks enabled) ─────────────────
+HOOKS_PATH=""
+HOOKS_PATH=$(node -e "
+  try {
+    const c = JSON.parse(require('fs').readFileSync('$STATE_DIR/openclaw.json','utf8'));
+    if (c.hooks && c.hooks.enabled) process.stdout.write(c.hooks.path || '/hooks');
+  } catch {}
+" 2>/dev/null || true)
+if [ -n "$HOOKS_PATH" ]; then
+  echo "[entrypoint] hooks enabled, path: $HOOKS_PATH (will bypass HTTP auth)"
+fi
+
 # ── Generate nginx config ────────────────────────────────────────────────────
 AUTH_PASSWORD="${AUTH_PASSWORD:-}"
 AUTH_USERNAME="${AUTH_USERNAME:-admin}"
@@ -75,6 +87,27 @@ if [ -n "$AUTH_PASSWORD" ]; then
         auth_basic_user_file /etc/nginx/.htpasswd;'
 else
   echo "[entrypoint] no AUTH_PASSWORD set, nginx will not require authentication"
+fi
+
+# Build hooks location block (skips HTTP basic auth, openclaw validates hook token)
+HOOKS_LOCATION_BLOCK=""
+if [ -n "$HOOKS_PATH" ]; then
+  HOOKS_LOCATION_BLOCK="location ${HOOKS_PATH} {
+        proxy_pass http://127.0.0.1:${GATEWAY_PORT};
+        proxy_set_header Authorization \"Bearer ${GATEWAY_TOKEN}\";
+
+        proxy_set_header Host \\\$host;
+        proxy_set_header X-Real-IP \\\$remote_addr;
+        proxy_set_header X-Forwarded-For \\\$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \\\$scheme;
+
+        proxy_http_version 1.1;
+
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+
+        error_page 502 503 504 /starting.html;
+    }"
 fi
 
 # ── Write startup page for 502/503/504 while gateway boots ───────────────────
@@ -132,6 +165,8 @@ server {
         return 200 '{"ok":true,"gateway":"starting"}';
         default_type application/json;
     }
+
+    ${HOOKS_LOCATION_BLOCK}
 
     location / {
         ${AUTH_BLOCK}

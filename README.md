@@ -118,7 +118,7 @@ If a provider env var is removed, that provider section is cleaned from `opencla
 
 | Variable | Default | Description |
 |---|---|---|
-| `AUTH_PASSWORD` | *(none)* | If set, nginx enforces HTTP basic auth on all routes except `/healthz`. If unset, no auth — gateway is open. |
+| `AUTH_PASSWORD` | *(none)* | If set, nginx enforces HTTP basic auth on all routes except `/healthz` and the hooks path (when hooks are enabled). If unset, no auth — gateway is open. |
 | `AUTH_USERNAME` | `admin` | Username for basic auth. |
 
 ### Gateway
@@ -131,6 +131,16 @@ If a provider env var is removed, that provider section is cleaned from `opencla
 | `OPENCLAW_WORKSPACE_DIR` | `/data/workspace` | Workspace directory for openclaw projects. |
 | `OPENCLAW_CONFIG_PATH` | `<STATE_DIR>/openclaw.json` | Override path to the config file. |
 | `OPENCLAW_CUSTOM_CONFIG` | `/app/config/openclaw.json` | Path to a user-provided custom JSON config. Env vars override on top. |
+
+### Hooks (webhook automation, optional)
+
+| Variable | Default | Description |
+|---|---|---|
+| `HOOKS_ENABLED` | | Set to `true` to enable the webhook hooks endpoint. |
+| `HOOKS_TOKEN` | | Shared secret for hook request auth. Required by openclaw when hooks are enabled. |
+| `HOOKS_PATH` | `/hooks` | Path prefix for hook endpoints (`/hooks/wake`, `/hooks/agent`, etc.). |
+
+When hooks are enabled and `AUTH_PASSWORD` is set, the hooks path automatically bypasses HTTP basic auth. Openclaw validates requests using the hook token instead. Docs: https://docs.openclaw.ai/automation/webhook
 
 ### Channels (optional)
 

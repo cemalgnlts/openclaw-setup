@@ -561,6 +561,17 @@ if (config.channels && Object.keys(config.channels).length === 0) {
   delete config.channels;
 }
 
+// ── Hooks (webhook automation) ───────────────────────────────────────────────
+if (process.env.HOOKS_ENABLED === "true" || process.env.HOOKS_ENABLED === "1") {
+  console.log("[configure] configuring hooks (from env)");
+  ensure(config, "hooks");
+  config.hooks.enabled = true;
+  if (process.env.HOOKS_TOKEN) config.hooks.token = process.env.HOOKS_TOKEN;
+  if (process.env.HOOKS_PATH)  config.hooks.path = process.env.HOOKS_PATH;
+} else if (config.hooks) {
+  console.log("[configure] hooks configured (from custom JSON)");
+}
+
 // ── Validate: at least one provider API key env var must be set ──────────────
 // All providers (built-in and custom) read API keys from env vars, not from JSON.
 const hasProvider =
