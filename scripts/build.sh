@@ -5,6 +5,7 @@
 #   ./scripts/build.sh                  # build both base + final
 #   ./scripts/build.sh base             # build base only
 #   ./scripts/build.sh final            # build final only (requires base)
+#   ./scripts/build.sh browser          # build browser sidecar only
 #   OPENCLAW_GIT_REF=v2026.1.29 ./scripts/build.sh  # pin to a specific version
 
 set -euo pipefail
@@ -12,6 +13,7 @@ set -euo pipefail
 OPENCLAW_GIT_REF="${OPENCLAW_GIT_REF:-main}"
 BASE_TAG="openclaw-base:local"
 FINAL_TAG="openclaw:local"
+BROWSER_TAG="openclaw-browser:local"
 TARGET="${1:-all}"
 
 build_base() {
@@ -34,6 +36,15 @@ build_final() {
   echo "==> Final image built: ${FINAL_TAG}"
 }
 
+build_browser() {
+  echo "==> Building browser sidecar image..."
+  docker build \
+    -f Dockerfile.browser \
+    -t "${BROWSER_TAG}" \
+    .
+  echo "==> Browser image built: ${BROWSER_TAG}"
+}
+
 case "${TARGET}" in
   base)
     build_base
@@ -41,12 +52,16 @@ case "${TARGET}" in
   final)
     build_final
     ;;
+  browser)
+    build_browser
+    ;;
   all)
     build_base
     build_final
+    build_browser
     ;;
   *)
-    echo "Usage: $0 [base|final|all]"
+    echo "Usage: $0 [base|final|browser|all]"
     exit 1
     ;;
 esac

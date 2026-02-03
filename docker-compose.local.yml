@@ -1,31 +1,25 @@
 services:
   openclaw:
-    image: coollabsio/openclaw:latest
+    image: openclaw:local
     ports:
       - "8080:8080"
     environment:
       # Provider (at least one required)
-      - ANTHROPIC_API_KEY=sk-ant-...
+      - OPENCODE_API_KEY=${OPENCODE_API_KEY}
       # Auth
-      - AUTH_PASSWORD=changeme
-      - OPENCLAW_GATEWAY_TOKEN=my-secret-token
+      - AUTH_PASSWORD=secret
+      - OPENCLAW_GATEWAY_TOKEN=local-dev-token
       # Browser sidecar
       - BROWSER_CDP_URL=http://browser:9223
       - BROWSER_EVALUATE_ENABLED=true
-      # Hooks (optional)
-      # - HOOKS_ENABLED=true
-      # - HOOKS_TOKEN=my-hook-secret
     volumes:
       - openclaw-data:/data
-      # Optional: custom JSON config for complex settings (groups, plugins, etc.)
-      # - ./my-openclaw.json:/app/config/openclaw.json
     depends_on:
       - browser
     restart: unless-stopped
 
   browser:
-    image: coollabsio/openclaw-browser:latest
-    # No port exposure needed — proxied via openclaw at /browser/
+    image: openclaw-browser:local
     environment:
       - PUID=1000
       - PGID=1000

@@ -164,9 +164,9 @@ map \$arg_token \$ocw_has_token {
 }
 
 map "\$ocw_has_token:\$args" \$ocw_proxy_args {
-    ~^1:.*  \$args;
-    ~^0:$   "token=${GATEWAY_TOKEN}";
+    ~^1:    \$args;
     ~^0:.+  "\$args&token=${GATEWAY_TOKEN}";
+    default "token=${GATEWAY_TOKEN}";
 }
 
 server {
@@ -187,6 +187,32 @@ server {
     }
 
     ${HOOKS_LOCATION_BLOCK}
+
+    # Redirect root without token to include token in URL (for Control UI WebSocket auth)
+    location = / {
+        ${AUTH_BLOCK}
+
+        if (\$arg_token = '') {
+            return 302 /?token=${GATEWAY_TOKEN};
+        }
+
+        proxy_pass http://127.0.0.1:${GATEWAY_PORT}/?\$args;
+        proxy_set_header Authorization "Bearer ${GATEWAY_TOKEN}";
+
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
+
+        error_page 502 503 504 /starting.html;
+    }
 
     location / {
         ${AUTH_BLOCK}
@@ -212,6 +238,24 @@ server {
     location = /starting.html {
         root /usr/share/nginx/html;
         internal;
+    }
+
+    # Browser sidecar proxy (VNC web UI)
+    location /browser/ {
+        ${AUTH_BLOCK}
+
+        proxy_pass http://browser:3000/;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+
+        proxy_read_timeout 86400s;
+        proxy_send_timeout 86400s;
     }
 }
 NGINXEOF

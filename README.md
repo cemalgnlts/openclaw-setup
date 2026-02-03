@@ -31,7 +31,7 @@ docker compose up -d
 **After starting:**
 
 1. **Openclaw UI** — `http://localhost:8080` (login: `admin` / your `AUTH_PASSWORD`)
-2. **Browser desktop** — `https://localhost:6901` (password: your `VNC_PW`) — use this to log into sites that need auth (OAuth, 2FA, captchas). Openclaw reuses the session via CDP.
+2. **Browser desktop** — `http://localhost:8080/browser/` (login: `admin` / your browser `PASSWORD`) — use this to log into sites that need auth (OAuth, 2FA, captchas). Openclaw reuses the session via CDP.
 
 ## Architecture
 

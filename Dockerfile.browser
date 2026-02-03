@@ -1,0 +1,13 @@
+FROM lscr.io/linuxserver/chromium:latest
+
+# Install socat for CDP port forwarding (Chrome M113+ forces --remote-debugging-address to 127.0.0.1)
+RUN apt-get update && \
+    apt-get install -y socat && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add socat as an s6 service (runs alongside Chromium)
+RUN mkdir -p /etc/s6-overlay/s6-rc.d/socat-cdp && \
+    echo "longrun" > /etc/s6-overlay/s6-rc.d/socat-cdp/type && \
+    printf '#!/command/execlineb -P\nsocat TCP-LISTEN:9223,reuseaddr,fork TCP:127.0.0.1:9222\n' > /etc/s6-overlay/s6-rc.d/socat-cdp/run && \
+    chmod +x /etc/s6-overlay/s6-rc.d/socat-cdp/run && \
+    touch /etc/s6-overlay/s6-rc.d/user/contents.d/socat-cdp
